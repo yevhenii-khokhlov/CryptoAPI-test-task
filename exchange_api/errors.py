@@ -1,0 +1,2 @@
+class UnknownProcessingError(Exception):
+    pass
