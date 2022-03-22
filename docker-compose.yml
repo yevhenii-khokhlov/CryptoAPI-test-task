@@ -5,7 +5,7 @@ services:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/code
+      - ./app-volume:/app
     ports:
       - "8000:8000"
     environment:
@@ -15,13 +15,13 @@ services:
       - CELERY_BACKEND=redis://redis:6379/0
     depends_on:
       - redis
+  redis:
+    image: redis:alpine
   celery:
     build: .
     command: celery -A CryptoAPI worker -l INFO
     volumes:
-      - .:/code
+      - ./app-volume:/app
     depends_on:
       - web
       - redis
-  redis:
-    image: "redis"

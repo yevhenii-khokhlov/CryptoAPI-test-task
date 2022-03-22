@@ -1,4 +1,7 @@
-from CryptoAPI.settings import binance_pairs, kraken_pairs
+import json
+
+from django.core.cache import cache
+
 from exchange_api.errors import UnknownProcessingError
 
 
@@ -25,11 +28,14 @@ def get_all_pairs_from_all_exchanges():
 
 def get_all_pairs_from(exchange):
     if exchange == 'binance':
-        print(binance_pairs)
-        return binance_pairs['pairs']
+        pairs = json.loads(cache.get('binance_pairs'))
+        parsed_pares = [parse_binance_pair(p) for p in pairs]
+
+        return parsed_pares
 
     if exchange == 'kraken':
-        return kraken_pairs
+        pairs = json.loads(cache.get('kraken_pairs'))
+        return pairs
 
     raise Exception(f'Wrong exchange {exchange}')
 
@@ -46,13 +52,37 @@ def get_pair_from(pair, exchange):
     raise Exception(f'Wrong exchange {exchange}')
 
 
-def get_pare_price_from_binance(pair):
-    for item in binance_pairs:
-        if item['s'] == pair.replace('/', ''):
-            return [item]
+def get_pare_price_from_binance(pair_name):
+    binance_pairs = json.loads(cache.get('binance_pairs'))
+    parsed_pair = pair_name.replace('/', '')
 
-    raise Exception(f'Pair not found {pair}')
+    for item in binance_pairs:
+        if item['s'] == parsed_pair:
+            pair = parse_binance_pair(item, pair_name)
+            return [pair]
+
+    raise Exception(f'Pair not found {parsed_pair}')
 
 
 def get_pare_price_from_kraken(pair):
     return [{"SDR/AWD": {}}]
+
+
+def parse_binance_pair(pair, name=None):
+    return {
+        'pair': name if name else pair['s'],
+        'close_price': pair['c'],
+        'open_price': pair['o'],
+        'high_price': pair['h'],
+        'low_price': pair['l']
+    }
+
+
+def parse_kraken_pair(pair, name=None):
+    return {
+        'pair': name if name else pair['s'],
+        'close_price': pair['c'],
+        'open_price': pair['o'],
+        'high_price': pair['h'],
+        'low_price': pair['l']
+    }

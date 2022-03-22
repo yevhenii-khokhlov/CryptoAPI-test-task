@@ -1,11 +1,11 @@
 import websocket
 
-from CryptoAPI.settings import binance_pairs
+from django.core.cache import cache
 
 
 def on_massage_binance(ws, message):
-    print('binance upd')
-    binance_pairs.update({"pairs": message})
+    cache.set('binance_pairs', message, 61)
+    print(f'binance upd {len(message)} items')
 
 
 def on_close_binance(ws):
