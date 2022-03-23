@@ -1,23 +1,10 @@
 from __future__ import absolute_import, unicode_literals
 
-from celery import shared_task
+import _thread
 
-from exchange_api.services.binanse_manager import start_binance
-from exchange_api.services.kraken_manager import start_kraken
-
-
-@shared_task
-def background_start_binance():
-    print('Start binance')
-    start_binance()
+from exchange_api.services.kraken_manager import kraken_ws_thread
+from exchange_api.services.binance_manager import binance_ws_thread
 
 
-@shared_task
-def background_start_kraken():
-    print('Start kraken')
-    start_kraken()
-
-
-background_start_binance.delay()
-background_start_kraken.delay()
-
+_thread.start_new_thread(kraken_ws_thread, ())
+_thread.start_new_thread(binance_ws_thread, ())
