@@ -4,6 +4,7 @@ from exchange_api.errors import UnknownProcessingError
 
 
 def get_prices_on_exchange(pair, exchange):
+    pair = pair.replace('/', '') if pair else None
     try:
         if not exchange and not pair:
             return get_all_pairs_from_all_exchanges()
@@ -21,21 +22,25 @@ def get_prices_on_exchange(pair, exchange):
 
 
 def get_all_pairs_from_all_exchanges():
-    binance_prices = get_all_pairs_prices_from_binance()
-    kraken_prices = get_all_pairs_prices_from_kraken()
     average_prices = {}
 
-    binance_pairs = binance_prices.keys()
-    for binance_pair in binance_pairs:
-        kraken_price = kraken_prices.get(binance_pair)
-        binance_price = binance_prices.get(binance_pair)
+    all_pairs = cache.get('binance_pairs')
+    all_pairs.extend(cache.get('kraken_pairs'))
+    unique_pairs = set(all_pairs)
 
-        if binance_price and kraken_price:
-            average_price = round((binance_price + kraken_price) / 2, 6)
-            average_prices.update({binance_pair: average_price})
+    for pair in unique_pairs:
+        b_price = get_pare_price_from_binance(pair)
+        k_price = get_pare_price_from_kraken(pair)
 
-        elif binance_price and not kraken_price:
-            average_prices.update({binance_pair: binance_price})
+        if not b_price and k_price:
+            average_prices.update({pair: k_price})
+
+        if not k_price and b_price:
+            average_prices.update({pair: b_price})
+
+        if b_price and k_price:
+            average = (b_price + k_price) / 2
+            average_prices.update({pair: average})
 
     return average_prices
 
@@ -82,18 +87,18 @@ def get_pair_from(pair, exchange):
 
 
 def get_pare_price_from_binance(pair):
-    pair_info = cache.get(f'B_{pair.replace("/", "")}')
+    pair_info = cache.get(f'B_{pair}')
     if pair_info:
         price = (float(pair_info['a']) + float(pair_info['b'])) / 2
-        return round(price, 6)
+        return price
 
-    return 0.0
+    return
 
 
 def get_pare_price_from_kraken(pair):
     pair_info = cache.get(f'K_{pair}')
     if pair_info:
         price = (float(pair_info[1]['a'][0]) + float(pair_info[1]['b'][0])) / 2
-        return round(price, 6)
+        return price
 
-    return 0.0
+    return

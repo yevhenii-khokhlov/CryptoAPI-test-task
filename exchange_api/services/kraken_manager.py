@@ -12,7 +12,7 @@ def get_kraken_pairs():
     for key in data.keys():
         pairs.append(data[key]['wsname'].replace('\\', ''))
 
-    cache.set('kraken_pairs', pairs)
+    cache.set('kraken_pairs', [p.replace('/', '') for p in pairs])
 
     return pairs
 
@@ -20,7 +20,7 @@ def get_kraken_pairs():
 # Define WebSocket callback functions
 def ws_message(ws, message_text):
     message = json.loads(message_text)
-    key = f'K_{message[-1]}'
+    key = f'K_{message[-1]}'.replace("/", "")
     print(f'KRAKEN {message}')
     cache.set(key, message)
 
